@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <title>Gestao de Expedicao - Display Express v6.6.4</title>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Segoe UI',Arial,sans-serif;background:#0f172a;color:#e2e8f0;min-height:100vh}
+    .topbar{background:#1e293b;border-bottom:1px solid #334155;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+    .logo{display:flex;align-items:center;gap:10px;font-size:1.2em;font-weight:700;color:#f8fafc}
+    .logo span{font-size:1.4em}
+    .user-info{display:flex;align-items:center;gap:12px}
+    .user-badge{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);color:#38bdf8;padding:6px 14px;border-radius:20px;font-size:0.8em;font-weight:600;cursor:pointer}
+    .user-badge:hover{background:rgba(56,189,248,0.2)}
+    .clock{font-size:0.85em;color:#94a3b8;text-align:right}
+    .clock .time{font-size:1.1em;font-weight:700;color:#f8fafc}
+    .tabs{display:flex;background:#1e293b;border-bottom:1px solid #334155;flex-wrap:wrap;gap:2px;padding:0 10px}
+    .tab-btn{padding:10px 14px;background:transparent;border:none;color:#94a3b8;font-size:0.8em;font-weight:600;cursor:pointer;white-space:nowrap;transition:all 0.2s;border-bottom:3px solid transparent}
+    .tab-btn:hover{color:#e2e8f0;background:rgba(255,255,255,0.05)}
+    .tab-btn.active{color:#38bdf8;border-bottom-color:#38bdf8;background:rgba(56,189,248,0.08)}
+    .tab-content{display:none;padding:20px;max-width:1400px;margin:0 auto;animation:fadeIn 0.3s}
+    .tab-content.active{display:block}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .card{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:20px;margin-bottom:16px}
+    .card-title{font-size:1em;font-weight:700;color:#f8fafc;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+    .form-group{margin-bottom:14px}
+    .form-label{display:block;font-size:0.8em;color:#94a3b8;margin-bottom:6px;font-weight:600}
+    .form-input{width:100%;padding:10px 14px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;font-size:0.95em;transition:border-color 0.2s}
+    .form-input:focus{outline:none;border-color:#38bdf8}
+    .form-input[readonly]{opacity:0.6;cursor:not-allowed}
+    .btn{padding:10px 20px;border:none;border-radius:8px;font-size:0.9em;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;gap:6px}
+    .btn-primary{background:#0ea5e9;color:#fff}
+    .btn-primary:hover{background:#0284c7}
+    .btn-success{background:#22c55e;color:#fff}
+    .btn-success:hover{background:#16a34a}
+    .btn-danger{background:#ef4444;color:#fff}
+    .btn-danger:hover{background:#dc2626}
+    .btn-warning{background:#f59e0b;color:#fff}
+    .btn-warning:hover{background:#d97706}
+    .btn-ghost{background:transparent;border:1px solid #334155;color:#94a3b8}
+    .btn-ghost:hover{background:rgba(255,255,255,0.05);color:#e2e8f0}
+    .btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .fora-modo-btn{transition:all .2s}
+    .fora-modo-btn.active{box-shadow:0 0 0 2px rgba(56,189,248,.18)}
+    .alert{padding:12px 16px;border-radius:8px;margin-bottom:14px;font-size:0.9em;display:none;align-items:center;gap:8px}
+    .alert.show{display:flex}
+    .alert-success{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#4ade80}
+    .alert-error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171}
+    .alert-info{background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.3);color:#38bdf8}
+    .alert-warning{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#fbbf24}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:768px){.grid-2{grid-template-columns:1fr}}
+    .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+    .stat-box{background:#1e293b;border:1px solid #334155;border-radius:10px;padding:10px 6px;text-align:center}
+    .stat-box .stat-value{font-size:1.3em;font-weight:700;color:#f8fafc}
+    .stat-box .stat-label{font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+    .stat-box.saca{border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.05)}
+    .stat-box.saca .stat-value{color:#fbbf24}
+    .stat-box.pacote{border-color:rgba(56,189,248,0.4);background:rgba(56,189,248,0.05)}
+    .stat-box.pacote .stat-value{color:#38bdf8}
+    .pos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px}
+    .pos-item{padding:12px 6px;border-radius:8px;text-align:center;font-size:0.85em;font-weight:600;cursor:pointer;transition:all 0.2s;border:1px solid}
+    .pos-item.livre{background:rgba(34,197,94,0.08);border-color:rgba(34,197,94,0.3);color:#4ade80}
+    .pos-item.ocupada{background:rgba(239,68,68,0.08);border-color:rgba(239,68,68,0.3);color:#f87171;position:relative}
+    .pos-item.pacote{background:rgba(56,189,248,0.08);border-color:rgba(56,189,248,0.3);color:#38bdf8}
+    .pos-item.misto{background:linear-gradient(135deg,rgba(245,158,11,0.12) 0%,rgba(56,189,248,0.12) 100%);border-color:rgba(168,85,247,0.4);color:#e2e8f0}
+    .pos-item.motoboy{background:rgba(168,85,247,0.08);border-color:rgba(168,85,247,0.4);color:#c4b5fd}
+    .pos-item .pos-code{font-size:1.15em;font-weight:700}
+    .pos-item .pos-info{font-size:0.82em;opacity:0.9;margin-top:3px}
+    .pos-item .pos-badge{position:absolute;top:-4px;right:-4px;background:#f59e0b;color:#000;border-radius:50%;width:16px;height:16px;font-size:9px;display:flex;align-items:center;justify-content:center}
+    .table{width:100%;border-collapse:collapse;font-size:0.85em}
+    .table th,.table td{padding:10px 12px;text-align:left;border-bottom:1px solid #334155}
+    .table th{background:#1e293b;color:#94a3b8;font-size:0.75em;text-transform:uppercase;letter-spacing:0.5px;font-weight:600}
+    .table tr:hover{background:rgba(255,255,255,0.02)}
+    .table .tipo-saca{color:#fbbf24;font-weight:600}
+    .table .tipo-pacote{color:#38bdf8;font-weight:600}
+    .toggle-group{display:flex;background:#0f172a;border:1px solid #334155;border-radius:10px;overflow:hidden;margin-bottom:16px}
+    .toggle-option{flex:1;padding:12px;text-align:center;cursor:pointer;font-size:0.85em;font-weight:600;transition:all 0.2s;border:none;background:transparent;color:#94a3b8}
+    .toggle-option.active{background:#0ea5e9;color:#fff}
+    .toggle-option.saca-active.active{background:#f59e0b;color:#fff}
+    .toggle-option.pacote-active.active{background:#38bdf8;color:#fff}
+    .modo-indicator{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:0.8em;font-weight:700;margin-bottom:12px}
+    .modo-saca{background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)}
+    .modo-pacote{background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3)}
+    .cmd-info{background:rgba(148,163,184,0.08);border:1px solid #334155;border-radius:8px;padding:10px 14px;font-size:0.8em;color:#94a3b8;margin-top:12px}
+    .cmd-info code{background:#0f172a;padding:2px 6px;border-radius:4px;color:#f8fafc;font-family:monospace}
+    .recent-list{max-height:300px;overflow-y:auto}
+    .recent-item{padding:10px 12px;border-bottom:1px solid #334155;display:flex;align-items:center;gap:10px;font-size:0.85em}
+    .recent-item:last-child{border-bottom:none}
+    .recent-item .ri-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:0.8em}
+    .recent-item .ri-info{flex:1}
+    .recent-item .ri-title{font-weight:600;color:#f8fafc}
+    .recent-item .ri-sub{color:#94a3b8;font-size:0.8em}
+    .recent-item .ri-time{color:#64748b;font-size:0.75em}
+    .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.8);display:none;justify-content:center;align-items:center;z-index:5000;flex-direction:column;gap:12px}
+    .loading.show{display:flex}
+    .spinner{width:36px;height:36px;border:3px solid #334155;border-top-color:#38bdf8;border-radius:50%;animation:spin 0.8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .badge-saca{background:rgba(245,158,11,0.15);color:#fbbf24;padding:2px 8px;border-radius:12px;font-size:0.75em;font-weight:600}
+    .badge-pacote{background:rgba(56,189,248,0.15);color:#38bdf8;padding:2px 8px;border-radius:12px;font-size:0.75em;font-weight:600}
+    .section-title{font-size:0.9em;color:#94a3b8;margin:16px 0 8px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+    .sala-header{display:flex;align-items:center;gap:8px;margin:12px 0 8px;padding-bottom:6px;border-bottom:1px solid #334155}
+    .sala-dot{width:8px;height:8px;border-radius:50%}
+    .sala-name{font-size:0.8em;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+    .aviso-item-actions{display:flex;gap:6px;margin-left:auto;align-items:center}
+    .aviso-delete-btn{background:transparent;border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:3px 8px;border-radius:6px;font-size:0.75em;cursor:pointer;transition:all 0.2s}
+    .aviso-delete-btn:hover{background:rgba(239,68,68,0.15)}
+    .config-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #334155}
+    .config-toggle-row:last-child{border-bottom:none}
+    .config-toggle-label{font-size:0.85em;color:#e2e8f0}
+    .config-toggle-desc{font-size:0.75em;color:#94a3b8}
+    .switch{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+    .switch input{opacity:0;width:0;height:0}
+    .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#334155;transition:0.3s;border-radius:24px}
+    .slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:#f8fafc;transition:0.3s;border-radius:50%}
+    input:checked + .slider{background:#22c55e}
+    input:checked + .slider:before{transform:translateX(20px)}
+    .modo-motoboy{background:rgba(168,85,247,0.15);color:#c4b5fd;border:1px solid rgba(168,85,247,0.3)}
+    @media print{body{background:#fff;color:#000}.topbar,.tabs{display:none}}
+    .voice-selector{display:flex;align-items:center;gap:6px;background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:20px;padding:4px 12px;font-size:0.75em;color:#c4b5fd;cursor:pointer;transition:all 0.2s}
+    .voice-selector:hover{background:rgba(168,85,247,0.2)}
+    .voice-selector select{background:transparent;border:none;color:#c4b5fd;font-size:0.9em;font-weight:600;cursor:pointer;outline:none;max-width:140px}
+    .voice-selector select option{background:#1e293b;color:#e2e8f0}
+    .voice-selector .voice-icon{font-size:1.1em}
+    .status-bar{padding:6px 20px;font-size:0.78em;font-weight:700;display:flex;align-items:center;gap:8px;transition:all 0.3s;border-bottom:1px solid transparent}
+    .status-bar.online{background:rgba(34,197,94,0.12);border-bottom-color:rgba(34,197,94,0.3);color:#4ade80}
+    .status-bar.lento{background:rgba(245,158,11,0.12);border-bottom-color:rgba(245,158,11,0.3);color:#fbbf24}
+    .status-bar.offline{background:rgba(239,68,68,0.15);border-bottom-color:rgba(239,68,68,0.4);color:#f87171}
+    .status-bar.offline.alerta-critico{animation:pulseOffline 1s infinite}
+    @keyframes pulseOffline{0%,100%{background:rgba(239,68,68,0.15)}50%{background:rgba(239,68,68,0.35)}}
+    .status-dot{width:10px;height:10px;border-radius:50%}
+    .status-bar.online .status-dot{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.8)}
+    .status-bar.lento .status-dot{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.8)}
+    .status-bar.offline .status-dot{background:#f87171;box-shadow:0 0 8px rgba(248,113,113,0.8)}
+    .status-fila{margin-left:auto;background:rgba(0,0,0,0.3);padding:3px 10px;border-radius:12px;font-size:0.9em}
+    #tab-fechamentocd{max-width:none !important;padding:20px 30px}
+    .fechamento-card{background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.4);border-radius:12px;padding:24px;margin-bottom:16px;min-height:calc(100vh - 220px)}
+    .fechamento-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+    .fechamento-titulo{font-size:1.15em;font-weight:700;color:#f8fafc;display:flex;align-items:center;gap:8px}
+    .fechamento-badge{font-size:1em;padding:6px 18px;border-radius:20px;background:rgba(148,163,184,0.15);color:#94a3b8;font-weight:800;transition:all 0.3s}
+    .fechamento-status{font-size:1.05em;margin-bottom:16px;text-align:center;padding:18px;border-radius:8px;background:#0f172a;transition:all 0.3s}
+    .fechamento-barra-wrap{height:18px;background:#0f172a;border:1px solid #334155;border-radius:9px;overflow:hidden;margin-bottom:20px}
+    .fechamento-barra{height:100%;width:0%;background:linear-gradient(90deg,#16a34a,#4ade80);border-radius:9px;transition:width 0.5s ease;box-shadow:0 0 14px rgba(74,222,128,0.6)}
+    .fechamento-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:10px;max-height:none;overflow-y:visible;margin-top:6px}
+    .fechamento-item{display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:10px;font-size:0.95em;transition:all 0.2s}
+    .fechamento-item.ok{background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3)}
+    .fechamento-item.pendente{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.3)}
+    .fechamento-item .fi-nome{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e2e8f0;font-weight:600;font-size:1.05em}
+    .fechamento-item .fi-tag{font-size:0.75em;font-weight:700;padding:3px 10px;border-radius:8px}
+    .fechamento-item.ok .fi-tag{background:rgba(34,197,94,0.2);color:#4ade80}
+    .fechamento-item.pendente .fi-tag{background:rgba(245,158,11,0.2);color:#fbbf24}
+    .fechamento-btn-marcar{background:#0ea5e9;border:none;border-radius:6px;color:#fff;padding:8px 18px;font-size:0.82em;font-weight:700;cursor:pointer;transition:background 0.2s}
+    .fechamento-btn-marcar:hover{background:#0284c7}
+    .fechamento-btn-marcar:disabled{opacity:0.5;cursor:wait}
+    .fechamento-btn-wa{background:#25D366;border:none;border-radius:6px;color:#fff;padding:7px 14px;font-size:0.78em;font-weight:700;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;transition:all 0.2s;white-space:nowrap} 
+    .fechamento-btn-wa:hover{background:#1ebe5b;transform:scale(1.05);text-decoration:none;color:#fff}
+    .fechamento-vazio{color:#64748b;font-size:0.95em;text-align:center;padding:20px;font-style:italic;grid-column:1 / -1}
+    .ranking-card-fech{background:rgba(245,158,11,0.05);border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:18px 22px;margin-top:16px}
+    .ranking-card-fech .rk-titulo{font-size:1.05em;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:1px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+    .ranking-card-fech .rk-badge{font-size:0.85em;background:rgba(245,158,11,0.15);color:#fbbf24;border-radius:20px;padding:4px 14px;font-weight:800}
+    .ranking-card-fech .rk-lista{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;max-height:420px;overflow-y:auto}
+    .ranking-card-fech .rk-item{display:flex;align-items:center;gap:12px;padding:11px 15px;border-radius:9px;background:#0f172a;border:1px solid #334155;font-size:0.95em}
+    .ranking-card-fech .rk-item.top1{background:linear-gradient(90deg,rgba(251,191,36,0.18),rgba(251,191,36,0.02));border-color:rgba(251,191,36,0.5);box-shadow:0 0 14px rgba(251,191,36,0.18)}
+    .ranking-card-fech .rk-item.top2{background:linear-gradient(90deg,rgba(203,213,225,0.12),rgba(203,213,225,0.02));border-color:rgba(203,213,225,0.4)}
+    .ranking-card-fech .rk-item.top3{background:linear-gradient(90deg,rgba(217,119,6,0.14),rgba(217,119,6,0.02));border-color:rgba(217,119,6,0.4)}
+    .ranking-card-fech .rk-pos{min-width:42px;text-align:center;font-weight:900;font-size:1.2em;color:#64748b}
+    .ranking-card-fech .rk-item.top1 .rk-pos{color:#fbbf24;font-size:1.5em}
+    .ranking-card-fech .rk-item.top2 .rk-pos{color:#cbd5e1;font-size:1.4em}
+    .ranking-card-fech .rk-item.top3 .rk-pos{color:#d97706;font-size:1.35em}
+    .ranking-card-fech .rk-nome{flex:1;font-weight:700;color:#f8fafc;font-size:1.05em;text-transform:capitalize}
+    .ranking-card-fech .rk-item.top1 .rk-nome{color:#fbbf24}
+    .ranking-card-fech .rk-hora{font-family:monospace;font-weight:700;color:#94a3b8;font-size:0.9em;background:#1e293b;border-radius:8px;padding:4px 11px}
+    .ranking-card-fech .rk-vazio{text-align:center;color:#64748b;padding:20px;font-style:italic;font-size:0.95em;grid-column:1 / -1}
+    .wa-link{color:#4ade80;text-decoration:none;font-weight:600;transition:all 0.2s;display:inline-flex;align-items:center;gap:4px}
+    .wa-link:hover{color:#22c55e;text-decoration:underline}
+    .busca-painel-box{background:rgba(88,166,255,0.06);border:1px solid rgba(88,166,255,0.3);border-radius:12px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    .busca-painel-box .bp-icon{font-size:1.3em}
+    .busca-painel-box input{flex:1;min-width:200px;background:#0f172a;border:1px solid #334155;border-radius:8px;color:#f8fafc;padding:10px 14px;font-size:1em;outline:none}
+    .busca-painel-box input:focus{border-color:#58a6ff;box-shadow:0 0 0 3px rgba(88,166,255,0.15)}
+    .busca-resultado{margin-top:10px;padding:12px 16px;border-radius:10px;font-size:0.95em;display:none;line-height:1.5}
+    .busca-resultado.encontrado{display:block;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.4);color:#4ade80}
+    .busca-resultado.nao-encontrado{display:block;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.4);color:#f87171}
+    .pos-item.destaque{animation:pulseDestaque 1.2s infinite;box-shadow:0 0 0 3px #fbbf24, 0 0 25px rgba(251,191,36,0.7) !important;z-index:10;position:relative}
+    @keyframes pulseDestaque{0%,100%{transform:scale(1);box-shadow:0 0 0 3px #fbbf24, 0 0 25px rgba(251,191,36,0.7)}50%{transform:scale(1.08);box-shadow:0 0 0 3px #fbbf24, 0 0 35px rgba(251,191,36,0.9)}}
+    .fila-entradas-box{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.4);border-radius:10px;padding:12px 14px;margin-top:12px;display:none}
+    .fila-entradas-box.show{display:block}
+    .fila-entradas-header{font-size:0.78em;color:#fbbf24;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+    .fila-entradas-header .fe-count{background:rgba(245,158,11,0.25);padding:2px 10px;border-radius:12px;font-size:0.95em}
+    .fila-entradas-lista{display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto}
+    .fila-entradas-item{background:#0d1117;border:1px solid #21262d;border-radius:7px;padding:7px 10px;font-size:0.82em;display:flex;align-items:center;gap:8px}
+    .fila-entradas-item .fe-tipo{font-size:0.75em;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0}
+    .fila-entradas-item .fe-tipo.saca{background:rgba(245,158,11,0.2);color:#fbbf24}
+    .fila-entradas-item .fe-tipo.pacote{background:rgba(56,189,248,0.2);color:#38bdf8}
+    .fila-entradas-item .fe-tipo.motoboy{background:rgba(168,85,247,0.2);color:#c4b5fd}
+    .fila-entradas-item .fe-codigo{flex:1;font-family:monospace;color:#f0f6fc;word-break:break-all;font-weight:600;font-size:0.95em}
+    .fila-entradas-item .fe-hora{font-size:0.7em;color:#64748b;white-space:nowrap}
+    .timeline-box{background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.3);border-radius:12px;padding:14px 16px;margin-bottom:16px}
+    .tl-header{display:flex;justify-content:space-between;align-items:center;font-size:0.8em;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+    .tl-count{background:rgba(168,85,247,0.2);color:#c4b5fd;padding:3px 10px;border-radius:12px;font-size:0.85em}
+    .tl-track{display:flex;gap:10px;overflow-x:auto;padding:6px 4px 14px;position:relative;scroll-behavior:smooth}
+    .tl-track::-webkit-scrollbar{height:6px}
+    .tl-track::-webkit-scrollbar-track{background:rgba(255,255,255,0.03);border-radius:3px}
+    .tl-track::-webkit-scrollbar-thumb{background:rgba(168,85,247,0.4);border-radius:3px}
+    .tl-track::before{content:'';position:absolute;top:36px;left:12px;right:12px;height:2px;background:linear-gradient(90deg,rgba(168,85,247,0.5),rgba(56,189,248,0.5));border-radius:1px;z-index:0}
+    .tl-event{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:90px;position:relative;z-index:1;animation:fadeIn 0.4s ease}
+    .tl-hora{font-size:0.72em;color:#94a3b8;font-weight:700;font-family:monospace}
+    .tl-dot{width:16px;height:16px;border-radius:50%;border:3px solid #0f172a;transition:transform 0.2s}
+    .tl-event:hover .tl-dot{transform:scale(1.3)}
+    .tl-dot.saida{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.6)}
+    .tl-dot.fim{background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.6)}
+    .tl-dot.entrada{background:#38bdf8;box-shadow:0 0 8px rgba(56,189,248,0.6)}
+    .tl-dot.fora{background:#f87171;box-shadow:0 0 8px rgba(248,113,113,0.6)}
+    .tl-info{font-size:0.7em;color:#94a3b8;text-align:center;max-width:90px;padding:5px 8px;background:#0d1117;border-radius:6px;border:1px solid #30363d;line-height:1.2;overflow:hidden}
+    .tl-info strong{display:block;color:#f0f6fc;font-size:0.95em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px}
+    .tl-vazio{color:#64748b;font-size:0.85em;font-style:italic;padding:14px;text-align:center;width:100%}
+    .aviso-offline-aba{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:10px;padding:12px 16px;margin-bottom:16px;color:#f87171;font-weight:600;font-size:0.9em;display:flex;align-items:center;gap:8px;}
+    .online-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+    .online-header h2{font-size:1.1em;color:#f8fafc;display:flex;align-items:center;gap:8px}
+    .online-info{display:flex;align-items:center;gap:10px;font-size:0.78em;color:#94a3b8}
+    .online-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:820px){.online-grid{grid-template-columns:1fr}}
+    .online-col{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px}
+    .online-col h3{margin:0 0 10px;font-size:0.95em;color:#f8fafc;display:flex;align-items:center;gap:8px}
+    .online-col h3 .badge{background:rgba(56,189,248,0.15);color:#38bdf8;border-radius:999px;padding:2px 10px;font-size:0.75em;font-weight:800;margin-left:auto}
+    .online-lista{display:flex;flex-direction:column;gap:6px;max-height:62vh;overflow-y:auto;padding-right:4px}
+    .online-user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:#0f172a;border:1px solid #1f2b3d;transition:all .15s}
+    .online-user:hover{background:#131e30;border-color:#334155}
+    .online-user .nome{flex:1;font-size:0.88em;font-weight:600;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .online-user .tempo{font-size:0.72em;color:#94a3b8;font-family:monospace;white-space:nowrap}
+    .online-user .painel-tag{font-size:0.65em;padding:2px 7px;border-radius:6px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+    .online-user .painel-tag.mot{background:rgba(245,158,11,.18);color:#fbbf24}
+    .online-user .painel-tag.acomp{background:rgba(56,189,248,.18);color:#38bdf8}
+    .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+    .dot.ativo{background:#22c55e;box-shadow:0 0 0 4px rgba(34,197,94,.18);animation:pulseOnline 2s infinite}
+    .dot.ocioso{background:#f59e0b;box-shadow:0 0 0 4px rgba(245,158,11,.18)}
+    .dot.offline{background:#64748b}
+    @keyframes pulseOnline{0%,100%{box-shadow:0 0 0 4px rgba(34,197,94,.18)}50%{box-shadow:0 0 0 7px rgba(34,197,94,.05)}}
+    .online-vazio,.online-erro{padding:20px;text-align:center;font-size:0.85em;color:#64748b;font-style:italic}
+    .online-erro{color:#f87171;font-style:normal}
+    .modo-silencioso-aviso{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(239,68,68,0.95);color:#fff;padding:8px 18px;border-radius:20px;font-size:0.85em;font-weight:700;z-index:4000;box-shadow:0 6px 24px rgba(0,0,0,0.4);display:none;align-items:center;gap:8px}
+    .modo-silencioso-aviso.show{display:flex}
+  </style>
+<base target="_blank">
+</head>
+<body>
+  <div class="loading" id="loading"><div class="spinner"></div><div style="color:#94a3b8;font-size:0.85em">Processando...</div></div>
+  <div class="modo-silencioso-aviso" id="avisoSilencioso">
+    🔇 <span>Modo Silencioso ativo neste dispositivo</span>
+  </div>
+  <div class="status-bar online" id="statusBar">
+    <span class="status-dot"></span>
+    <span id="statusText">Online</span>
+    <span class="status-fila" id="statusFila" style="display:none;">📥 <strong>0</strong> na fila</span>
+  </div>
+  <div class="topbar">
+    <div class="logo"><span>&#128230;</span> Gestao de Expedicao <span style="font-size:0.6em;color:#38bdf8;background:rgba(56,189,248,0.1);padding:2px 8px;border-radius:12px">v6.6.4</span></div>
+    <div class="user-info">
+      <div class="voice-selector" id="voiceSelectorBox" style="display:none;">
+        <span class="voice-icon">&#127908;</span>
+        <select id="voiceSelect"><option value="">Voz padrão</option></select>
+      </div>
+      <div class="clock"><div class="time" id="clockTime">--:--</div><div id="clockDate">--/--/----</div></div>
+      <div class="user-badge" id="btnSair">&#128100; <span id="userName">--</span> (Sair)</div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="entrada">&#128229; Entrada</button>
+    <button class="tab-btn" data-tab="fechamentocd">&#128274; Fechamento CD</button>
+    <button class="tab-btn" data-tab="painel">&#128200; Painel</button>
+    <button class="tab-btn" data-tab="relatorio">&#128196; Relatorio</button>
+    <button class="tab-btn" data-tab="admin">&#9881; Admin</button>
+    <button class="tab-btn" data-tab="motoristas">&#128663; Motoristas</button>
+    <button class="tab-btn" data-tab="motoboycodes">&#127949; Códigos Motoboy</button>
+    <button class="tab-btn" data-tab="avisos">&#128226; Avisos</button>
+    <button class="tab-btn" data-tab="megafone">&#128266; Megafone</button>
+    <button class="tab-btn" data-tab="qrcode">&#9633; QR Code</button>
+    <button class="tab-btn" data-tab="forarota">&#128293; Fora de Rota</button>
+    <button class="tab-btn" data-tab="online">&#128101; Online</button>
+  </div>  
+  <div id="tab-entrada" class="tab-content active">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128229; Registrar Entrada</div>
+        <div class="form-label">&#9881; Modo de Entrada</div>
+        <div class="toggle-group" id="modoEntradaToggle">
+          <button class="toggle-option saca-active active" data-modo="SACA">&#128230; SACA</button>
+          <button class="toggle-option pacote-active" data-modo="PACOTE">&#128234; Pacote</button>
+          <button class="toggle-option" data-modo="MOTOBOY" style="background:rgba(168,85,247,0.1);color:#c4b5fd;">&#128757; Motoboy</button>
+        </div>
+        <div class="modo-indicator modo-saca" id="modoIndicator">
+          <span id="modoIcon">&#128230;</span> Modo Atual: <strong id="modoTexto">SACA</strong>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Codigo de Barras / Numero</label>
+          <input type="tel" inputmode="numeric" class="form-input" id="entradaCodigo" placeholder="Bipe o codigo aqui..." onkeydown="if(event.key==='Enter'){registrarEntrada();return false;}" autocomplete="off">
+        </div>
+        <div class="form-group" style="display:none;">
+          <label class="form-label">&#128290; Quantidade</label>
+          <input type="number" class="form-input" id="entradaQtd" value="1" min="1" style="width:100px;">
+        </div>
+        <div id="deteccaoAutomatica" style="display:none;margin-bottom:12px;padding:8px 12px;border-radius:8px;font-size:0.85em;font-weight:600"></div>
+        
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnRegistrarEntrada">&#128229; Registrar Entrada</button>
+          <button class="btn" id="btnVozEntrada" onclick="toggleVozEntrada()" style="background:rgba(168,85,247,0.2); color:#c4b5fd; border:1px solid #a855f7;">&#127908; Falar</button>
+          <button class="btn btn-ghost" id="btnLimparEntrada">&#10060; Limpar</button>
+        </div>
+
+        <div class="cmd-info">
+          <strong>&#128161; Codigos de Comando:</strong><br>
+          Bipe <code>*MODO_PACOTE*</code> para alternar para Pacote<br>
+          Bipe <code>*MODO_SACA*</code> para alternar para Saca<br>
+          Bipe <code>*MODO_MOTOBOY*</code> para alternar para Motoboy
+        </div>
+        <div id="alertEntrada" class="alert"></div>
+        <div class="fila-entradas-box" id="filaEntradasBox">
+          <div class="fila-entradas-header">
+            <span>📥 Entradas na fila (offline)</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="fe-count" id="filaEntradasCount">0</span>
+              <button onclick="limparFilaTravada()" style="background:transparent; border:none; color:#f87171; cursor:pointer; font-size:0.9em;" title="Limpar fila travada">🗑️</button>
+            </div>
+          </div>
+          <div class="fila-entradas-lista" id="filaEntradasLista"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128200; Resumo do Estoque</div>
+        <div class="stats-grid">
+          <div class="stat-box"><div class="stat-value" id="resTotalOcup">0</div><div class="stat-label">Ocupadas</div></div>
+          <div class="stat-box"><div class="stat-value" id="resTotalLivre">44</div><div class="stat-label">Livres</div></div>
+          <div class="stat-box saca"><div class="stat-value" id="resTotalSacas">0</div><div class="stat-label">Sacas</div></div>
+          <div class="stat-box pacote"><div class="stat-value" id="resTotalPacotes">0</div><div class="stat-label">Pacotes</div></div>
+          <div class="stat-box" style="border-color:rgba(245,158,11,0.4);background:rgba(245,158,11,0.05)"><div class="stat-value" id="resRotasCarro" style="color:#fbbf24">0</div><div class="stat-label" style="color:#fbbf24">Rotas Carro</div></div>
+          <div class="stat-box" style="border-color:rgba(168,85,247,0.4);background:rgba(168,85,247,0.05)"><div class="stat-value" id="resRotasMoto" style="color:#c4b5fd">0</div><div class="stat-label" style="color:#c4b5fd">Rotas Moto</div></div>
+        </div>
+        <div class="section-title">Ultimas Entradas</div>
+        <div class="recent-list" id="ultimasEntradas"><div class="recent-item"><div class="ri-info"><div class="ri-sub">Aguardando...</div></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-fechamentocd" class="tab-content">
+    <div class="fechamento-card" id="cardFechamentoCD">
+      <div class="fechamento-header">
+        <div class="fechamento-titulo">🔒 Fechamento do CD — Fim de Rota</div>
+        <div class="fechamento-badge" id="fechamentoBadge">0/0</div>
+      </div>
+      <div class="fechamento-status" id="fechamentoStatus">Carregando...</div>
+      <div class="fechamento-barra-wrap">
+        <div class="fechamento-barra" id="fechamentoBarra"></div>
+      </div>
+      <div class="fechamento-lista" id="fechamentoLista">
+        <div class="fechamento-vazio">Aguardando dados...</div>
+      </div>
+    </div>
+    <div class="ranking-card-fech" id="rankingCardFech" style="display:none;">
+      <div class="rk-titulo">
+        <span>🏆 Ranking do dia — quem terminou primeiro</span>
+        <span class="rk-badge" id="rankingFechBadge">0</span>
+      </div>
+      <div class="rk-lista" id="rankingFechLista">
+        <div class="rk-vazio">Ninguém finalizou ainda hoje...</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-painel" class="tab-content">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+      <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 12px;">
+        <div class="card" style="padding: 12px 16px; background: rgba(251,191,36,0.05); border-color: rgba(251,191,36,0.3); margin-bottom: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 15px;">
+            <div style="text-align: center;">
+              <div style="font-size: 0.65em; color: #94a3b8; text-transform: uppercase;">Chamada</div>
+              <div style="font-size: 2em; font-weight: 900; color: #fbbf24; line-height: 1;" id="senhaAtualPainel">---</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75em;" id="btnVoltarSenha">&#9664; Voltar</button>
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 0.75em;" id="btnAvancarSenha">Avançar &#9654;</button>
+            </div>
+            <button class="btn btn-success" style="padding: 10px 20px; font-size: 1em; font-weight: 800; height: 100%;" id="btnChamarSenha">&#128266; CHAMAR</button>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #0f172a; padding: 8px; border-radius: 8px; border: 1px solid #334155;">
+            <span style="font-size: 0.75em; color: #94a3b8;">Próxima:</span>
+            <strong style="color: #38bdf8; font-size: 1.1em; margin-right: 10px;" id="senhaProximaPainel">---</strong>
+            <input type="number" class="form-input" id="senhaManualInput" style="width: 60px; text-align: center; padding: 6px;" placeholder="000" min="1" max="999">
+            <button class="btn btn-warning" style="padding: 6px 10px; font-size: 0.8em;" id="btnDefinirSenha">OK</button>
+          </div>
+        </div>
+        <div class="busca-painel-box" style="margin-bottom: 0; padding: 12px; background: rgba(56,189,248,0.08); border-color: rgba(56,189,248,0.4);">
+          <span class="bp-icon" style="font-size: 1.4em;">&#128269;</span>
+          <input type="tel" inputmode="numeric" id="buscaPainelInput" placeholder="Bipe a saca e aperte Enter..." onkeydown="if(event.key==='Enter'){buscarSacaNoPainel();return false;}" style="font-size: 1.1em; padding: 12px;">
+          <button class="btn btn-primary" onclick="buscarSacaNoPainel()" style="padding: 12px 24px; font-size: 1em;">&#128269; Localizar</button>
+          <button class="btn btn-ghost" onclick="limparBuscaPainel()" title="Limpar" style="padding: 12px;">&#10060;</button>
+        </div>
+        <div id="buscaPainelResultado" class="busca-resultado" style="margin-top: -8px;"></div>
+        <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 0;">
+          <div class="stat-box" style="padding: 8px 4px;"><div class="stat-value" id="pOcupadas">0</div><div class="stat-label">Ocupadas</div></div>
+          <div class="stat-box" style="padding: 8px 4px;"><div class="stat-value" id="pLivres">44</div><div class="stat-label">Livres</div></div>
+          <div class="stat-box saca" style="padding: 8px 4px;"><div class="stat-value" id="pSacas">0</div><div class="stat-label">Sacas</div></div>
+          <div class="stat-box pacote" style="padding: 8px 4px;"><div class="stat-value" id="pPacotes">0</div><div class="stat-label">Pacotes</div></div>
+          <div class="stat-box" style="padding: 8px 4px; border-color:rgba(168,85,247,0.4);background:rgba(168,85,247,0.05)"><div class="stat-value" id="pMotoboy" style="color:#c4b5fd">0</div><div class="stat-label" style="color:#c4b5fd">Motoboy</div></div>
+        </div>
+        <div class="card" style="padding: 12px; margin-bottom: 0;">
+          <div class="sala-header" style="margin: 0 0 8px; padding-bottom: 4px;">
+            <span class="sala-dot" style="background:#f59e0b"></span>
+            <span class="sala-name" style="font-size: 0.8em;">Sala 1</span>
+            <span style="margin-left:auto; font-size:0.75em; color:#64748b" id="statsSala1">0/12</span>
+          </div>
+          <div class="pos-grid" id="gridSala1" style="grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 6px;"></div>
+        </div>
+        <div class="card" style="padding: 12px; margin-bottom: 0;">
+          <div class="sala-header" style="margin: 0 0 8px; padding-bottom: 4px;">
+            <span class="sala-dot" style="background:#8b5cf6"></span>
+            <span class="sala-name" style="font-size: 0.8em;">Sala 2</span>
+            <span style="margin-left:auto; font-size:0.75em; color:#64748b" id="statsSala2">0/32</span>
+          </div>
+          <div class="pos-grid" id="gridSala2" style="grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 6px;"></div>
+        </div>
+        <div class="card" style="padding: 12px; margin-bottom: 0;">
+          <div class="sala-header" style="margin: 0 0 8px; padding-bottom: 4px;">
+            <span class="sala-dot" style="background:#c4b5fd"></span>
+            <span class="sala-name" style="font-size: 0.8em;">Sala 3 - Motoboy</span>
+            <span style="margin-left:auto; font-size:0.75em; color:#64748b" id="statsSala3">0/40</span>
+          </div>
+          <div class="pos-grid" id="gridSala3" style="grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 6px;"></div>
+        </div>
+      </div>
+      <div style="width: 340px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+        <div class="card" style="margin-bottom: 0; padding: 12px;">
+          <div class="card-title" style="font-size: 0.9em; margin-bottom: 8px;">&#128228; Últimas Saídas</div>
+          <div class="recent-list" id="ultimasSaidasPainel" style="max-height: 220px; overflow-y: auto;">
+            <div class="recent-item"><div class="ri-info"><div class="ri-sub">Aguardando...</div></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom: 0; padding: 12px; display: flex; flex-direction: column; height: 320px;">
+          <div class="card-title" style="font-size: 0.9em; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span>&#128172; Chat</span>
+            <button class="btn btn-ghost" style="padding: 4px 8px; font-size: 0.7em;" id="btnExportarChat">&#128190;</button>
+          </div>
+          <div id="chatGestaoLista" style="flex: 1; overflow-y: auto; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px; font-size: 0.8em; margin-bottom: 8px;">
+            <div style="color: #64748b; text-align: center; padding: 10px;">Carregando...</div>
+          </div>
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <input type="text" class="form-input" id="chatGestaoNome" placeholder="Nome" style="width: 70px; font-size: 0.75em; padding: 6px;">
+            <input type="file" id="chatGestaoArquivo" accept="image/*" style="display: none;">
+            <button type="button" id="btnAnexarChatGestao" title="Anexar" class="btn btn-ghost" style="padding: 6px 8px;" onclick="document.getElementById('chatGestaoArquivo').click()">&#128206;</button>
+            <input type="text" class="form-input" id="chatGestaoMsg" placeholder="Mensagem..." style="flex: 1; min-width: 0; font-size: 0.75em; padding: 6px;" onkeydown="if(event.key==='Enter'){enviarChatGestao();return false;}">
+            <button class="btn btn-success" style="padding: 6px 10px;" id="btnEnviarChatGestao">&#10148;</button>
+          </div>
+          <div id="chatGestaoAnexoPreview" style="display: none; margin-top: 6px; padding: 6px; border: 1px solid #334155; border-radius: 8px; background: #0f172a; align-items: center; gap: 6px;">
+            <img id="chatGestaoAnexoImg" style="height: 30px; border-radius: 4px;">
+            <span id="chatGestaoAnexoNome" style="font-size: 0.7em; color: #94a3b8; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+            <button type="button" onclick="removerAnexoChatGestao()" class="btn btn-ghost" style="padding: 2px 4px; color: #f87171;">&#10060;</button>
+          </div>
+        </div>
+        <div class="timeline-box" style="margin-bottom: 0; padding: 12px; height: 250px; display: flex; flex-direction: column;">
+          <div class="tl-header" style="margin-bottom: 8px;">
+            <span>&#9201;&#65039; Linha do Tempo</span>
+            <span class="tl-count" id="tlCount">0</span>
+          </div>
+          <div class="tl-track" id="timelineTrack" style="flex: 1; overflow-y: auto; flex-direction: column; gap: 6px; padding: 0;">
+            <div class="tl-vazio">Nenhum evento...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 900px) {
+        #tab-painel > div { flex-direction: column !important; }
+        #tab-painel > div > div { width: 100% !important; min-width: 100% !important; }
+      }
+    </style>
+  </div>
+
+  <div id="tab-relatorio" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128197; Relatorio do Dia</div>
+        <div id="relatorioDiaContent">
+          <div class="stats-grid">
+            <div class="stat-box"><div class="stat-value" id="rdTotal">0</div><div class="stat-label">Total Saidas</div></div>
+            <div class="stat-box"><div class="stat-value" id="rdUnidades">0</div><div class="stat-label">Total Unidades</div></div>
+            <div class="stat-box saca"><div class="stat-value" id="rdSacas">0</div><div class="stat-label">Sacas</div></div>
+            <div class="stat-box pacote"><div class="stat-value" id="rdPacotes">0</div><div class="stat-label">Pacotes</div></div>
+          </div>
+          <div class="section-title">Detalhes</div>
+          <div style="overflow-x:auto"><table class="table" id="tabelaRelatorioDia"><thead><tr><th>Horario</th><th>Codigo</th><th>Tipo</th><th>Qtd</th><th>Motorista</th><th>Placa</th><th>Posicao</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnAtualizarRelatorioDia">&#128260; Atualizar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128197; Relatorio Mensal</div>
+        <div class="form-group">
+          <label class="form-label">Ano</label>
+          <input type="number" class="form-input" id="relAno" value="2026">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mes</label>
+          <select class="form-input" id="relMes">
+            <option value="1">Janeiro</option><option value="2">Fevereiro</option><option value="3">Marco</option>
+            <option value="4">Abril</option><option value="5">Maio</option><option value="6">Junho</option>
+            <option value="7">Julho</option><option value="8">Agosto</option><option value="9">Setembro</option>
+            <option value="10">Outubro</option><option value="11">Novembro</option><option value="12">Dezembro</option>
+          </select>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnCarregarRelatorioMensal">&#128260; Carregar</button>
+          <button class="btn btn-ghost" id="btnGerarPDF">&#128196; Gerar PDF</button>
+        </div>
+        <div id="relatorioMensalContent" style="margin-top:16px"></div>
+        <div id="alertRelatorio" class="alert"></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="tab-admin" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128100; Cadastrar Funcionario</div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-input" id="cadFuncNome" placeholder="Nome completo...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">PIN (numerico)</label>
+          <input type="tel" inputmode="numeric" class="form-input" id="cadFuncPin" placeholder="Ex: 1234">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo</label>
+          <input type="text" class="form-input" id="cadFuncCargo" placeholder="Ex: Operador">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnCadastrarFuncionario">&#128100; Cadastrar</button>
+        </div>
+        <div id="alertAdmin" class="alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#9881; Configuracoes</div>
+        <div class="config-toggle-row">
+          <div>
+            <div class="config-toggle-label">Mostrar "Motoristas na Agencia" no Painel Publico</div>
+            <div class="config-toggle-desc">Exibe ou oculta o contador no painel dos motoristas</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleMostrarMotoristas" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="btn-group" style="margin-top:16px">
+          <button class="btn btn-danger" id="btnLimparTudo">&#128465; Limpar Tudo</button>
+          <button class="btn btn-primary" id="btnInicializarPlanilhas">&#128203; Inicializar Planilhas</button>
+          <button class="btn btn-warning" id="btnLimparDuplicatas" style="background:#a855f7;">&#129529; Limpar Duplicatas</button>
+        </div>
+        <div class="section-title">Funcionarios Cadastrados</div>
+        <div style="overflow-x:auto"><table class="table" id="tabelaFuncionarios"><thead><tr><th>Nome</th><th>PIN</th><th>Cargo</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-motoristas" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128663; Cadastrar Motorista</div>
+        <div class="form-group">
+          <label class="form-label">Nome</label>
+          <input type="text" class="form-input" id="cadMotNome" placeholder="Nome do motorista...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Placa</label>
+          <input type="text" class="form-input" id="cadMotPlaca" placeholder="Ex: ABC1D23" style="text-transform:uppercase;">
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#128241; Telefone / WhatsApp</label>
+          <input type="tel" inputmode="numeric" class="form-input" id="cadMotTelefone" placeholder="DDD + numero (ex: 47999998888)" maxlength="20">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnCadastrarMotorista">&#128663; Cadastrar</button>
+        </div>
+        <div id="alertMotoristas" class="alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128663; Motoristas Cadastrados</div>
+        <div style="overflow-x:auto"><table class="table" id="tabelaMotoristas"><thead><tr><th>Nome</th><th>Placa</th><th>WhatsApp</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="tab-motoboycodes" class="tab-content">
+    <div class="grid-2">
+      <div class="card" style="border-color:rgba(168,85,247,0.5);">
+        <div class="card-title">&#128203; Cadastro em Massa (colar do Mercado Livre)</div>
+        <div style="font-size:0.8em;color:#94a3b8;margin-bottom:10px;">
+          Cole o texto inteiro do ML abaixo. O sistema extrai automaticamente só os números depois de <strong style="color:#c4b5fd;">"Saca:"</strong> filtrados pelo tipo de rota escolhido.
+        </div>
+        <div class="form-group">
+          <textarea class="form-input" id="bulkMotoboyTexto" rows="6" placeholder="Cole aqui o texto do painel do Mercado Livre..."></textarea>
+        </div>
+        <div class="form-group" style="margin-top:10px;">
+          <label class="form-label">&#127919; Filtrar por tipo de rota:</label>
+          <select class="form-input" id="bulkMotoboyFiltro">
+            <option value="MOTO" selected>🏍️ Só Motocicleta (padrão)</option>
+            <option value="CARRO">🚗 Só Veículo de Passeio</option>
+            <option value="TODOS">📦 Todos (motocicleta + carro)</option>
+          </select>
+        </div>
+        <div class="config-toggle-row" style="margin-bottom:10px;padding:10px;border-radius:8px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);">
+          <div>
+            <div class="config-toggle-label" style="color:#fbbf24;font-weight:700;">&#9888;&#65039; Substituir todos os códigos existentes</div>
+            <div class="config-toggle-desc">Se marcado, apaga TODOS os códigos antigos antes de cadastrar os novos. Ideal pro dia a dia.</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="bulkMotoboySubstituir" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnBulkMotoboy" style="background:#a855f7;">&#128229; Extrair e Cadastrar Todos</button>
+          <button class="btn btn-ghost" id="btnLimparBulkMotoboy">&#10060; Limpar</button>
+        </div>
+        <div id="alertBulkMotoboy" class="alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#127949; Cadastrar Código Motoboy (individual)</div>
+        <div style="font-size:0.8em;color:#94a3b8;margin-bottom:12px;">Adicione códigos individuais. A identificação é EXATA: só o código idêntico ao cadastrado vira MOTOBOY.</div>
+        <div class="form-group">
+          <label class="form-label">Código de Barras / Parte do Código</label>
+          <input type="tel" inputmode="numeric" class="form-input" id="cadMotoboyCode" placeholder="Ex: 284, 289, ABC123..." onkeydown="if(event.key==='Enter'){cadastrarCodigoMotoboy();return false;}">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnCadastrarMotoboyCode">&#127949; Cadastrar Código</button>
+        </div>
+        <div id="alertMotoboyCodes" class="alert"></div>
+        <div class="cmd-info" style="margin-top:16px;">
+          <strong>&#128161; Como funciona:</strong><br>
+          Quando você bipa um código EXATAMENTE igual a um dos códigos cadastrados, o sistema identifica automaticamente como <strong>MOTOBOY</strong> e aloca na <strong>Sala 3 (MB1-MB40)</strong>.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">&#128203; Códigos Motoboy Cadastrados (<span id="contadorMotoboyCodes">0</span>)</div>
+      <div style="overflow-x:auto;max-height:400px;"><table class="table" id="tabelaMotoboyCodes"><thead><tr><th>Código</th><th style="width:80px">Ação</th></tr></thead><tbody></tbody></table></div>
+      <div class="btn-group" style="margin-top:12px;">
+        <button class="btn btn-danger" id="btnLimparTodosMotoboyCodes">&#128465; Limpar Todos</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-avisos" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128226; Publicar Aviso</div>
+        <div class="form-group">
+          <label class="form-label">Texto do Aviso</label>
+          <textarea class="form-input" id="avisoTexto" rows="3" placeholder="Digite o aviso..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-input" id="avisoTipo">
+            <option value="normal">Normal</option>
+            <option value="urgente">Urgente</option>
+            <option value="info">Informativo</option>
+            <option value="sucesso">Sucesso</option>
+          </select>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-success" id="btnPublicarAviso">&#128226; Publicar</button>
+        </div>
+        <div id="alertAvisos" class="alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128227; Avisos Publicados</div>
+        <div class="recent-list" id="listaAvisos"><div class="recent-item"><div class="ri-info"><div class="ri-sub">Nenhum aviso publicado</div></div></div></div>
+      </div>
+    </div>
+  </div>  
+  <div id="tab-megafone" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#128266; Megafone Digital</div>
+        <div class="form-group">
+          <label class="form-label">Digite o que quer falar</label>
+          <textarea class="form-input" id="megafoneTexto" rows="3" placeholder="Ex: Motorista João, comparecer na balança..." onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();falarTextoLivre();}"></textarea>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnFalarAgora">&#128266; Falar Aqui + Enviar pro PC</button>
+          <button class="btn btn-success" id="btnFalarSoPC" style="background:#a855f7;">&#128421; Falar só no PC</button>
+          <button class="btn btn-danger" id="btnPararFala">&#128263; Parar</button>
+        </div>
+        <div class="btn-group" style="margin-top:6px;">
+          <button class="btn btn-ghost" id="btnSalvarRecado">&#128190; Salvar Recado</button>
+          <button class="btn btn-ghost" id="btnLimparMegafone">&#10060; Limpar</button>
+        </div>
+        <div class="config-toggle-row" style="margin-top:12px;padding:10px;border-radius:8px;background:rgba(56,189,248,0.06);border:1px solid rgba(56,189,248,0.2);">
+          <div>
+            <div class="config-toggle-label">&#128276; Tocar bipe antes de falar no PC</div>
+            <div class="config-toggle-desc">PC emite um "bip" curto antes da fala, pra chamar atenção</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleBipeAntes" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="config-toggle-row" style="margin-top:10px;padding:10px;border-radius:8px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);">
+          <div>
+            <div class="config-toggle-label" style="color:#f87171;font-weight:700;">&#128263; Modo Silencioso neste dispositivo</div>
+            <div class="config-toggle-desc">Este aparelho NÃO vai falar os eventos (ideal pro celular, pra não ter eco)</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="toggleSilencioso">
+            <span class="slider" style="background:#7f1d1d;"></span>
+          </label>
+        </div>
+        <div id="alertMegafone" class="alert"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128227; Recados Salvos</div>
+        <div id="listaRecados" class="recent-list" style="max-height:400px;">
+          <div class="recent-item"><div class="ri-info"><div class="ri-sub">Nenhum recado salvo ainda</div></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>&#128340; Últimos 10 eventos de voz enviados</span>
+        <button class="btn btn-ghost" style="padding:4px 10px;font-size:0.72em;" onclick="carregarHistoricoMegafone()">&#128260; Atualizar</button>
+      </div>
+      <div id="historicoMegafone" class="recent-list" style="max-height:280px;">
+        <div class="recent-item"><div class="ri-info"><div class="ri-sub">Nenhum envio ainda</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-qrcode" class="tab-content">
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">&#9633; Gerador de QR Code</div>
+        <div class="form-group">
+          <label class="form-label">Texto / Comando para QR Code</label>
+          <input type="text" class="form-input" id="qrTexto" placeholder="Digite o texto ou comando..." value="*MODO_MOTOBOY*">
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" id="btnGerarQR">&#9633; Gerar QR Code</button>
+          <button class="btn btn-ghost" id="btnLimparQR">&#10060; Limpar</button>
+        </div>
+        <div class="section-title" style="margin-top:16px;">Comandos Rapidos</div>
+        <div class="btn-group">
+          <button class="btn btn-success" onclick="preencherQR('*MODO_PACOTE*')" style="font-size:0.8em;">&#128234; MODO PACOTE</button>
+          <button class="btn btn-warning" onclick="preencherQR('*MODO_SACA*')" style="font-size:0.8em;">&#128230; MODO SACA</button>
+          <button class="btn btn-primary" onclick="preencherQR('*MODO_MOTOBOY*')" style="font-size:0.8em;background:rgba(168,85,247,0.2);color:#c4b5fd;border-color:rgba(168,85,247,0.4);">&#128757; MODO MOTOBOY</button>
+        </div>
+        <div id="alertQRCode" class="alert"></div>
+      </div>
+      <div class="card" style="text-align:center;">
+        <div class="card-title">&#9633; Visualizacao</div>
+        <div id="qrPreview" style="padding:20px;">
+          <div style="color:#64748b;font-size:0.85em;">Clique em "Gerar QR Code" para visualizar</div>
+        </div>
+        <div id="qrDownloadArea" style="display:none;margin-top:12px;">
+          <a id="qrDownloadLink" class="btn btn-success" style="text-decoration:none;" download="qrcode.png">&#128190; Baixar Imagem</a>
+        </div>
+      </div>
+    </div>
+    
+    <div class="card" style="margin-top:16px; border-color:rgba(56,189,248,0.4);">
+      <div class="card-title">&#128203; Importar IDs do ML em Massa</div>
+      <div style="font-size:0.82em;color:#94a3b8;margin-bottom:10px;">
+        Cole abaixo a lista de Sacas e IDs (um por linha). Exemplo:<br>
+        <code style="background:#0f172a; padding:2px 6px; border-radius:4px;">26;5852491</code> ou <code style="background:#0f172a; padding:2px 6px; border-radius:4px;">{"assignment": "26", "container_id": 5852491}</code>
+      </div>
+      <div class="form-group">
+        <textarea class="form-input" id="bulkMLIds" rows="5" placeholder="Cole a lista aqui..."></textarea>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btnSalvarBulkMLIds">&#128190; Salvar IDs no Navegador</button>
+        <button class="btn btn-danger" id="btnLimparCacheML">&#128465; Limpar Todos os IDs Salvos</button>
+      </div>
+      <div id="alertBulkML" class="alert"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px; border-color:rgba(168,85,247,0.4);" id="areaColarQR">
+      <div class="card-title">&#128247; Ler Print do QR Code (Colar Direto)</div>
+      <div style="font-size:0.85em;color:#c4b5fd;margin-bottom:12px;font-weight:600;text-align:center;padding:20px;border:2px dashed rgba(168,85,247,0.5);border-radius:10px;background:rgba(168,85,247,0.05);cursor:pointer;" onclick="window.focus();">
+        📋 Clique aqui e aperte <strong>Ctrl + V</strong> para colar o print!
+      </div>
+      <div style="font-size:0.82em;color:#94a3b8;margin-bottom:10px;text-align:center;">
+        Ou se preferir, selecione o arquivo:
+      </div>
+      <div class="form-group">
+        <input type="file" id="inputPrintQR" accept="image/*" class="form-input" style="padding:8px;">
+      </div>
+      <div id="alertPrintQR" class="alert"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div class="card-title">&#9633; QR Codes dos Comandos do Sistema</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;" id="qrCodesComandos"></div>
+    </div>
+  </div>
+
+  <div id="tab-forarota" class="tab-content">
+    <div class="card" style="border-color:rgba(34,211,238,0.35);">
+      <div class="card-title">&#128293; Fora de Rota — Bipagem Única</div>
+      <div style="font-size:0.82em;color:#94a3b8;margin-bottom:14px;">
+        Use <strong style="color:#f8fafc;">o mesmo campo</strong> para entrada, conferência e busca.
+        No modo <strong style="color:#38bdf8;">Automático</strong>, um código novo entra nos Fora de Rota
+        e um código que já está na lista é conferido automaticamente.
+      </div>
+      <div class="card" style="margin:0 0 14px;padding:14px;background:#0f172a;border-color:#334155;">
+        <div class="form-label">&#128290; Bipagem / Busca</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <button type="button" class="btn btn-primary fora-modo-btn active" id="btnModoForaAuto" data-modo="AUTO">&#9889; Automático</button>
+          <button type="button" class="btn btn-ghost fora-modo-btn" id="btnModoForaEntrada" data-modo="ENTRADA">&#128229; Entrada</button>
+          <button type="button" class="btn btn-ghost fora-modo-btn" id="btnModoForaConferencia" data-modo="CONFERENCIA">&#9989; Conferência</button>
+        </div>
+        <div id="foraRotaModoAtual" style="font-size:0.75em;color:#38bdf8;margin-bottom:8px;font-weight:700;">
+          MODO ATUAL: AUTOMÁTICO
+        </div>
+        <div style="display:flex;gap:8px;align-items:stretch;flex-wrap:wrap;">
+          <input type="tel" inputmode="numeric" class="form-input" id="foraRotaCodigo" placeholder="Bipe o código aqui..." onkeydown="if(event.key==='Enter'){processarForaRota();return false;}" autocomplete="off" style="flex:1;min-width:220px;font-size:1.05em;">
+          <button type="button" class="btn btn-success" id="btnProcessarForaRota">&#9889; Bipar / Processar</button>
+          <button type="button" class="btn btn-primary" id="btnBuscarForaRota">&#128269; Buscar</button>
+        </div>
+        <div id="alertForaRota" class="alert" style="margin-top:10px;"></div>
+        <div id="foraRotaResultado" style="display:none;margin-top:10px;padding:12px;border-radius:9px;background:rgba(56,189,248,0.07);border:1px solid rgba(56,189,248,0.25);"></div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="card" style="margin:0;padding:14px;background:#0f172a;border-color:#334155;">
+            <div class="card-title" style="font-size:0.92em;">&#128203; Conferência</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <span style="font-size:0.85em;font-weight:700;color:#fbbf24;">
+                &#9202; Faltantes: <span id="confPendentesCount">0</span>
+              </span>
+              <span style="font-size:0.75em;color:#64748b;">
+                Conferidos: <strong id="confConferidosCount" style="color:#4ade80;">0</strong>
+                &nbsp;|&nbsp;
+                Excluídos: <strong id="confExcluidosCount" style="color:#f87171;">0</strong>
+              </span>
+            </div>
+            <div id="confForaRotaLista" class="recent-list" style="max-height:320px;min-height:150px;">
+              <div class="recent-item">
+                <div class="ri-info">
+                  <div class="ri-sub">Nenhum pacote pendente de conferência</div>
+                </div>
+              </div>
+            </div>
+            <div class="btn-group" style="margin-top:10px;">
+              <button type="button" class="btn btn-danger" id="btnExcluirFaltantesForaRota">&#128465; Excluir faltantes</button>
+              <button type="button" class="btn btn-ghost" id="btnAtualizarForaRota">&#128260; Atualizar</button>
+            </div>
+            <div id="alertExcluirFaltantes" class="alert" style="margin-top:10px;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin:0;padding:14px;background:#0f172a;border-color:#334155;">
+            <div class="card-title" style="font-size:0.92em;">&#9200; Prazo de conferência</div>
+            <div style="font-size:0.78em;color:#94a3b8;margin-bottom:10px;">
+              O prazo continua servindo apenas para retirar automaticamente da lista os registros que expirarem.
+              O histórico permanece salvo na planilha.
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+              <select class="form-input" id="confPrazoModo" style="width:auto;flex:1;min-width:180px;">
+                <option value="FIM_DO_DIA">Expira no fim do dia</option>
+                <option value="MINUTOS">Expirar após X minutos</option>
+              </select>
+              <input type="number" class="form-input" id="confPrazoMinutos" value="480" min="1" style="width:90px;">
+              <button type="button" class="btn btn-ghost" id="btnSalvarPrazoConf" style="font-size:0.8em;">&#128190; Salvar</button>
+            </div>
+            <div id="alertConfPrazo" class="alert" style="margin-top:10px;"></div>
+            <div style="margin-top:18px;padding:12px;border-radius:8px;background:rgba(15,23,42,0.7);border:1px solid #334155;">
+              <div style="font-size:0.7em;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Último bipado</div>
+              <div id="foraRotaUltimo" style="font-family:monospace;font-size:1.15em;font-weight:700;color:#f8fafc;margin-top:5px;">---</div>
+              <div style="font-size:0.75em;color:#64748b;margin-top:4px;">
+                Falado: <span id="foraRotaFalado" style="color:#fbbf24;font-weight:700;">---</span>
+              </div>
+            </div>
+            <div id="confUltimo" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);font-family:monospace;font-size:0.9em;color:#4ade80;text-align:center;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-online" class="tab-content">
+    <div class="online-header">
+      <h2>&#128101; Quem está online agora</h2>
+      <div class="online-info">
+        <span id="online-atualizado">—</span>
+        <button class="btn btn-primary" style="padding:6px 14px;font-size:0.78em;" onclick="carregarOnline()">&#128260; Atualizar</button>
+      </div>
+    </div>
+    <div class="online-grid">
+      <div class="online-col">
+        <h3>&#128663; Painel Motoristas <span class="badge" id="online-count-motorista">0</span></h3>
+        <div id="online-lista-motorista" class="online-lista">
+          <div class="online-vazio">Carregando…</div>
+        </div>
+      </div>
+      <div class="online-col">
+        <h3>&#128203; Painel Acompanhamento <span class="badge" id="online-count-acompanhamento">0</span></h3>
+        <div id="online-lista-acompanhamento" class="online-lista">
+          <div class="online-vazio">Carregando…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="modalSaida" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,0.85);z-index:6000;justify-content:center;align-items:center;overflow-y:auto;">
+    <div style="background:#1e293b;border:1px solid #334155;border-radius:16px;padding:0;max-width:800px;width:95%;box-shadow:0 20px 60px rgba(0,0,0,0.5);margin:20px 0; display:flex; flex-direction:column; max-height: 92vh;">
+      <div style="position:sticky; top:0; background:#1e293b; z-index:10; padding:12px 16px; border-bottom:1px solid #334155; border-radius:16px 16px 0 0;">
+        <div style="font-size:1em;font-weight:700;color:#f8fafc;margin-bottom:8px;display:flex;align-items:center;gap:8px; justify-content:center;">&#128228; Confirmar Saida</div>
+        <div style="background:rgba(15,23,42,0.6); border:1px solid #334155; border-radius:8px; padding:8px; display:flex; justify-content:space-around; align-items:center;">
+          <div style="text-align:center;">
+            <div style="font-size:0.65em;color:#94a3b8;text-transform:uppercase;">Posição</div>
+            <div id="modalSaidaPosicao" style="font-size:1.3em;font-weight:900;color:#fbbf24;">--</div>
+          </div>
+          <div style="text-align:center; border-left:1px solid #334155; border-right:1px solid #334155; padding:0 15px;">
+            <div style="font-size:0.65em;color:#94a3b8;text-transform:uppercase;">Código</div>
+            <div id="modalSaidaCodigo" style="font-size:1em;font-weight:700;color:#f8fafc;">--</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:0.65em;color:#94a3b8;text-transform:uppercase;">Total</div>
+            <div id="modalSaidaQtd" style="font-size:1.3em;font-weight:900;color:#f8fafc;">--</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px; justify-content:center; margin-top:6px;">
+          <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:6px; padding:2px 10px; font-size:0.75em; color:#fbbf24; font-weight:700;">
+            SACAS: <span id="modalSaidaSacasPos">0</span>
+          </div>
+          <div style="background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.3); border-radius:6px; padding:2px 10px; font-size:0.75em; color:#38bdf8; font-weight:700;">
+            PACOTES: <span id="modalSaidaPacotesPos">0</span>
+          </div>
+        </div>
+        <div style="display:none;">
+          <span id="modalSaidaPosicaoResumo"></span>
+          <span id="modalSaidaTipo"></span>
+        </div>
+      </div>
+      <div style="padding:16px; overflow-y:auto; display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
+        <div style="flex:1; min-width:250px; display:flex; flex-direction:column;">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Motorista</label>
+            <input type="text" class="form-input" id="modalSaidaMotorista" placeholder="Nome do motorista..." list="listaMotoristasSaida" autocomplete="off" onkeydown="if(event.key==='Enter'){confirmarSaidaModal();return false;}">
+            <datalist id="listaMotoristasSaida"></datalist>
+          </div>
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Placa (opcional)</label>
+            <input type="text" class="form-input" id="modalSaidaPlaca" placeholder="Ex: ABC1D23" style="text-transform:uppercase;">
+          </div>
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label">&#128241; Telefone / WhatsApp (opcional)</label>
+            <input type="tel" inputmode="numeric" class="form-input" id="modalSaidaTelefone" placeholder="DDD + numero" maxlength="20">
+          </div>
+          <div class="btn-group" style="justify-content:space-between; align-items:center; margin-top:auto;">
+            <button type="button" class="btn btn-warning" style="background:#f59e0b; color:#fff; flex: 1; margin-right: 8px; padding:10px 5px;" onclick="mostrarQRdoML()">&#128241; Mostrar QR</button>
+            <button class="btn btn-ghost" id="btnCancelarModalSaida" style="padding:10px 15px;">Cancelar</button>
+            <button class="btn btn-danger" id="btnConfirmarModalSaida" style="padding:10px 15px; font-weight:800;">&#128228; Baixa</button>
+          </div>
+        </div>
+        <div id="modalQRCodeML" style="display:none; flex:1; max-width:300px; min-width:220px; text-align:center; background: #fff; padding: 10px; border-radius: 8px; flex-direction:column; align-items:center; justify-content:center;">
+          <div style="color: #333; font-size: 12px; margin-bottom: 4px; font-weight: bold;">QR Code do Mercado Livre</div>
+          <img id="imgQRCodeML" style="max-height: 170px; max-width: 100%; object-fit: contain; border-radius: 4px;" />
+          <div id="txtQRCodeML" style="font-family: monospace; font-size: 9px; color: #555; word-break: break-all; margin-top: 4px; background: #f0f0f0; padding: 4px; border-radius: 4px; display:none;"></div>
+          <button type="button" class="btn btn-ghost" style="margin-top:8px; padding: 4px 10px; font-size: 11px; color: #333; border-color: #ccc;" onclick="document.getElementById('modalQRCodeML').style.display='none'">Fechar QR</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div id="modalHistorico" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(15,23,42,0.85); z-index:7000; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:16px; padding:20px; max-width:400px; width:90%; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+      <div style="font-size:1.1em; font-weight:700; color:#f8fafc; margin-bottom:16px; display:flex; align-items:center; gap:8px;">📜 Histórico de Entradas - Saca <span id="histSacaNumero" style="color:#38bdf8;"></span></div>
+      <div id="histLista" style="max-height:300px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"></div>
+      <div class="btn-group" style="justify-content:flex-end; margin-top:16px;">
+        <button class="btn btn-ghost" onclick="document.getElementById('modalHistorico').style.display='none'">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbzMejSWmfnoEpF8ppgfAZm6d6IZ_fMR_KbOjcBQXUVBTRiiFTp4WnchY0cN_fBo0i_fyQ/exec';
+    if (typeof google === 'undefined' || !google.script) {
+      const createFetch = (successFn, failFn) => {
+        return new Proxy({}, { get: function(target, functionName) {
+          return function(...args) {
+            const payload = { acao: functionName, parametros: args.length === 1 ? args[0] : args };
+            const iframeId = 'gas_frame_' + Date.now();
+            const iframe = document.createElement('iframe'); iframe.style.display = 'none'; iframe.name = iframeId; iframe.id = iframeId; document.body.appendChild(iframe);
+            const form = document.createElement('form'); form.method = 'POST'; form.action = GAS_URL; form.target = iframeId; form.style.display = 'none';
+            const input = document.createElement('input'); input.type = 'hidden'; input.name = 'payload'; input.value = JSON.stringify(payload); form.appendChild(input); document.body.appendChild(form); form.submit();
+            const messageListener = function(event) {
+              if (event.source !== iframe.contentWindow) return;
+              window.removeEventListener('message', messageListener); document.body.removeChild(iframe); document.body.removeChild(form);
+              try { const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; if (successFn) successFn(data); } catch (e) { if (failFn) failFn(new Error('Resposta inválida do servidor')); }
+            };
+            window.addEventListener('message', messageListener);
+          };
+        }});
+      };
+      window.google = { script: { run: new Proxy({}, { get: function(target, prop) {
+        if (prop === 'withSuccessHandler') { return function(successFn) { return new Proxy({}, { get: function(t, nextProp) { if (nextProp === 'withFailureHandler') { return function(failFn) { return createFetch(successFn, failFn); }; } return createFetch(successFn, null)[nextProp]; } }); }; }
+        if (prop === 'withFailureHandler') { return function(failFn) { return createFetch(null, failFn); }; }
+        return createFetch(null, null)[prop];
+      }})}};
+    }
+    var modoEntradaAtual = sessionStorage.getItem('modoEntradaDisplayExpress') || 'SACA';
+    var _MOTORISTAS_TEL_CACHE = null; var _POSICAO_DESTAQUE_PAINEL = null; var _POSICAO_DESTAQUE_TIMEOUT = null;
+    var posicoesSala1 = ['A2','A1','B2','B1','C2','C1','D3','D2','D1','E3','E2','E1'];
+    var posicoesSala2 = ['F4','F3','F2','F1','G4','G3','G2','G1','H4','H3','H2','H1','I4','I3','I2','I1','J4','J3','J2','J1','K4','K3','K2','K1','L4','L3','L2','L1','M4','M3','M2','M1'];
+    var posicoesSala3 = ['MB1','MB2','MB3','MB4','MB5','MB6','MB7','MB8','MB9','MB10','MB11','MB12','MB13','MB14','MB15','MB16','MB17','MB18','MB19','MB20','MB21','MB22','MB23','MB24','MB25','MB26','MB27','MB28','MB29','MB30','MB31','MB32','MB33','MB34','MB35','MB36','MB37','MB38','MB39','MB40'];
+    var FILA_KEY = 'displayExpressFilaOffline'; var _STATUS_ATUAL = 'online'; var _TIMESTAMP_OFFLINE = 0; var _SYNC_EM_ANDAMENTO = false;
+    var SILENCIOSO_KEY = 'displayExpressModoSilencioso'; var _MODO_SILENCIOSO = localStorage.getItem(SILENCIOSO_KEY) === '1';
+    var VOZ_SELECIONADA = null;
+    
+    function _aplicarModoSilencioso(){ var box = document.getElementById('avisoSilencioso'); var toggle = document.getElementById('toggleSilencioso'); if(box){ if(_MODO_SILENCIOSO) box.classList.add('show'); else box.classList.remove('show'); } if(toggle) toggle.checked = _MODO_SILENCIOSO; }
+    function toggleModoSilencioso(){ _MODO_SILENCIOSO = document.getElementById('toggleSilencioso').checked; localStorage.setItem(SILENCIOSO_KEY, _MODO_SILENCIOSO ? '1' : '0'); _aplicarModoSilencioso(); showAlert('alertMegafone', _MODO_SILENCIOSO ? '🔇 Este dispositivo NÃO vai falar eventos' : '🔊 Este dispositivo VAI falar eventos', _MODO_SILENCIOSO ? 'warning' : 'success'); }
+    
+    var VOZ_TS_KEY = 'displayExpressVozTs'; var _ULTIMO_VOZ_TS = parseInt(localStorage.getItem(VOZ_TS_KEY) || '0'); var _FILA_VOZ = []; var _FALANDO = false;
+    function _tocarBipeLocal(){ try { var ctx = new (window.AudioContext || window.webkitAudioContext)(); var t = ctx.currentTime; var osc = ctx.createOscillator(); var gain = ctx.createGain(); osc.connect(gain); gain.connect(ctx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(950, t); gain.gain.setValueAtTime(0.18, t); gain.gain.exponentialRampToValueAtTime(0.001, t + 0.15); osc.start(t); osc.stop(t + 0.15); } catch(e){} }
+    
+    function fonetizar(texto) {
+      var t = String(texto || '');
+      t = t.replace(/\bA(\d+)\b/g, 'Á $1');
+      t = t.replace(/PACOTE ADICIONAL/gi, 'PACOTE EXTRA');
+      return t;
+    }
+
+    function _processarFilaVoz(){
+      if(_MODO_SILENCIOSO){ _FILA_VOZ = []; return; }
+      if(_FALANDO || _FILA_VOZ.length === 0) return;
+      var ev = _FILA_VOZ.shift(); var texto = ev.texto; var comBipe = false;
+      if(texto.indexOf('||BIPE') >= 0){ comBipe = true; texto = texto.replace('||BIPE', '').trim(); }
+      _FALANDO = true; if(comBipe) _tocarBipeLocal();
+      try {
+        if(window.speechSynthesis.speaking) window.speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance(fonetizar(texto));
+        utterance.lang = 'pt-BR'; utterance.rate = 0.92; utterance.pitch = 1.45; utterance.volume = 1.0;
+        if(VOZ_SELECIONADA) utterance.voice = VOZ_SELECIONADA;
+        utterance.onend = function(){ _FALANDO = false; setTimeout(_processarFilaVoz, 400); };
+        utterance.onerror = function(){ _FALANDO = false; setTimeout(_processarFilaVoz, 400); };
+        window.speechSynthesis.speak(utterance);
+      } catch(e) { _FALANDO = false; }
+      _mostrarToastVoz(ev.tipo, texto, ev.origem);
+    }
+
+    function _mostrarToastVoz(tipo, texto, origem){
+      var id = 'vozToast'; var antigo = document.getElementById(id); if(antigo) antigo.remove();
+      var cor = tipo === 'ENTRADA' ? '#fbbf24' : tipo === 'SAIDA' ? '#ef4444' : tipo === 'MEGAFONE_SO_PC' ? '#a855f7' : '#38bdf8';
+      var icone = tipo === 'ENTRADA' ? '📥' : tipo === 'SAIDA' ? '📤' : '📣';
+      var el = document.createElement('div'); el.id = id;
+      el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;background:'+cor+';color:#0d1117;padding:14px 22px;border-radius:12px;font-weight:700;font-size:1.05em;box-shadow:0 10px 40px rgba(0,0,0,0.5);max-width:90%;text-align:center;animation:fadeIn 0.3s ease;';
+      el.innerHTML = icone + ' <strong>' + escapeHtml(tipo) + '</strong>: ' + escapeHtml(texto);
+      document.body.appendChild(el); setTimeout(function(){ if(el.parentNode) el.remove(); }, 7000);
+    }
+
+    function _verificarVozRemota(){
+      google.script.run.withSuccessHandler(function(r){
+        if(!r || !r.sucesso || !r.eventos || !r.eventos.length) return;
+        var maior = _ULTIMO_VOZ_TS;
+        r.eventos.forEach(function(ev){ if(ev.ts > _ULTIMO_VOZ_TS){ if(!_MODO_SILENCIOSO) _FILA_VOZ.push(ev); if(ev.ts > maior) maior = ev.ts; } });
+        if(maior > _ULTIMO_VOZ_TS){ _ULTIMO_VOZ_TS = maior; localStorage.setItem(VOZ_TS_KEY, String(maior)); }
+        if(!_MODO_SILENCIOSO) _processarFilaVoz();
+      }).withFailureHandler(function(){ }).getEventosVozNovos(_ULTIMO_VOZ_TS);
+    }
+
+    function _enviarEventoVozMarcado(tipo, texto, origem, cb){
+      google.script.run.withSuccessHandler(function(r){
+        if(r && r.sucesso && r.ts && r.ts > _ULTIMO_VOZ_TS){ _ULTIMO_VOZ_TS = r.ts; localStorage.setItem(VOZ_TS_KEY, String(r.ts)); }
+        if(cb) cb(r);
+      }).withFailureHandler(function(e){ if(cb) cb({ sucesso: false, mensagem: String(e) }); }).enviarEventoVoz(tipo, texto, origem);
+    }
+
+    function _getFila() { try { return JSON.parse(localStorage.getItem(FILA_KEY) || '[]'); } catch(e){ return []; } }
+    function _setFila(fila) { try { localStorage.setItem(FILA_KEY, JSON.stringify(fila || [])); } catch(e){} }
+    function _enfileirarAcao(tipo, dados) {
+      var fila = _getFila();
+      fila.push({ id: Date.now() + '_' + Math.random().toString(36).slice(2,8), tipo: tipo, dados: dados, criadoEm: new Date().toISOString() });
+      _setFila(fila); _atualizarStatusVisual();
+    }
+    function _removerDaFila(id) { var fila = _getFila().filter(function(a){ return a.id !== id; }); _setFila(fila); }
+    function limparFilaTravada(){ if(!confirm('Deseja apagar todos os itens da fila offline?')) return; _setFila([]); _SYNC_EM_ANDAMENTO = false; _atualizarStatusVisual(); showAlert('alertEntrada', 'Fila de entradas limpa!', 'info'); }
+
+    function _processarFila() {
+      if (_SYNC_EM_ANDAMENTO) return; var fila = _getFila(); if (!fila || fila.length === 0) return; if (!navigator.onLine) return;
+      _SYNC_EM_ANDAMENTO = true; var acao = fila[0];
+      var executar = function(fnBackend, params) {
+        google.script.run.withSuccessHandler(function(r){
+          if (r && r.sucesso !== false) { _removerDaFila(acao.id); _atualizarStatusVisual(); _SYNC_EM_ANDAMENTO = false; setTimeout(_processarFila, 500); }
+          else { _removerDaFila(acao.id); _atualizarStatusVisual(); _SYNC_EM_ANDAMENTO = false; var msgErro = r.mensagem || 'Erro'; showAlert('alertEntrada', 'Erro no item: ' + msgErro, 'warning'); setTimeout(_processarFila, 500); }
+        }).withFailureHandler(function(e){ _SYNC_EM_ANDAMENTO = false; })[fnBackend](params);
+      };
+      try {
+        if (acao.tipo === 'registrarSaida') { executar('registrarSaida', acao.dados); }
+        else if (acao.tipo === 'gravarEntrada') {
+          google.script.run.withSuccessHandler(function(r){
+            if (r && r.sucesso !== false) { _removerDaFila(acao.id); _atualizarStatusVisual(); _atualizarFilaEntradasVisual(); _SYNC_EM_ANDAMENTO = false; setTimeout(function(){ carregarPainel(); carregarUltimasEntradas(); carregarTimeline(); }, 300); setTimeout(_processarFila, 500); }
+            else { _removerDaFila(acao.id); _atualizarFilaEntradasVisual(); _SYNC_EM_ANDAMENTO = false; showAlert('alertEntrada', 'Entrada ignorada: ' + (r.mensagem || 'Erro'), 'error'); setTimeout(_processarFila, 500); }
+          }).withFailureHandler(function(e){ _SYNC_EM_ANDAMENTO = false; }).gravarEntrada(acao.dados);
+        } else if (acao.tipo === 'cadastrarMotoristaRapido') { executar('cadastrarMotoristaRapido', acao.dados); }
+        else if (acao.tipo === 'registrarFimRota') { executar('registrarFimRota', acao.dados); }
+        else { _removerDaFila(acao.id); _SYNC_EM_ANDAMENTO = false; setTimeout(_processarFila, 100); }
+      } catch (e) { _SYNC_EM_ANDAMENTO = false; }
+    }
+
+    function _atualizarStatusVisual() {
+      var bar = document.getElementById('statusBar'); var txt = document.getElementById('statusText'); var filaEl = document.getElementById('statusFila'); if (!bar) return;
+      var fila = _getFila(); var qtd = fila.length;
+      bar.classList.remove('online', 'lento', 'offline', 'alerta-critico');
+      if (!navigator.onLine) {
+        bar.classList.add('offline'); txt.textContent = '🔴 Sem conexão — offline'; _STATUS_ATUAL = 'offline'; if (!_TIMESTAMP_OFFLINE) _TIMESTAMP_OFFLINE = Date.now();
+        var tempoOffline = Date.now() - _TIMESTAMP_OFFLINE;
+        if (tempoOffline > 5 * 60 * 1000) { bar.classList.add('alerta-critico'); txt.textContent = '🚨 Offline há ' + Math.floor(tempoOffline/60000) + ' min — ' + qtd + ' na fila'; }
+      } else if (_STATUS_ATUAL === 'lento') { bar.classList.add('lento'); txt.textContent = '🟡 Conexão lenta'; }
+      else { bar.classList.add('online'); txt.textContent = '🟢 Online'; _TIMESTAMP_OFFLINE = 0; _STATUS_ATUAL = 'online'; }
+      if (qtd > 0) { filaEl.style.display = 'inline-block'; filaEl.innerHTML = '📥 <strong>' + qtd + '</strong> na fila'; } else { filaEl.style.display = 'none'; }
+      _atualizarFilaEntradasVisual();
+    }
+
+    function _atualizarFilaEntradasVisual() {
+      var box = document.getElementById('filaEntradasBox'); var lista = document.getElementById('filaEntradasLista'); var count = document.getElementById('filaEntradasCount'); if (!box || !lista || !count) return;
+      var fila = _getFila().filter(function(a){ return a.tipo === 'gravarEntrada'; });
+      if (fila.length === 0) { box.classList.remove('show'); return; }
+      box.classList.add('show'); count.textContent = fila.length; var html = '';
+      fila.slice().reverse().forEach(function(acao) {
+        var tipo = (acao.dados && acao.dados.modoAtual) || 'SACA'; var tipoClass = tipo.toLowerCase(); var codigoSafe = escapeHtml((acao.dados && acao.dados.codigo) || '---'); var hora = '';
+        try { var dt = new Date(acao.criadoEm); hora = String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0'); } catch(e){}
+        html += '<div class="fila-entradas-item"><span class="fe-tipo ' + tipoClass + '">' + escapeHtml(tipo) + '</span><span class="fe-codigo">' + codigoSafe + '</span><span class="fe-hora">' + hora + '</span></div>';
+      });
+      lista.innerHTML = html;
+    }
+
+    var _TIMEOUT_PING = null;
+    function _medirLatencia() {
+      if (!navigator.onLine) { _STATUS_ATUAL = 'offline'; if (!_TIMESTAMP_OFFLINE) _TIMESTAMP_OFFLINE = Date.now(); _atualizarStatusVisual(); return; }
+      var t0 = Date.now(); var jaRespondeu = false;
+      _TIMEOUT_PING = setTimeout(function(){ if (jaRespondeu) return; jaRespondeu = true; _STATUS_ATUAL = 'offline'; if (!_TIMESTAMP_OFFLINE) _TIMESTAMP_OFFLINE = Date.now(); _atualizarStatusVisual(); }, 10000);
+      google.script.run.withSuccessHandler(function(){
+        if (jaRespondeu) return; jaRespondeu = true; clearTimeout(_TIMEOUT_PING); var dt = Date.now() - t0; var estavaOffline = _STATUS_ATUAL === 'offline';
+        _STATUS_ATUAL = dt > 4000 ? 'lento' : 'online'; _TIMESTAMP_OFFLINE = 0; _atualizarStatusVisual();
+      }).withFailureHandler(function(){
+        if (jaRespondeu) return; jaRespondeu = true; clearTimeout(_TIMEOUT_PING); _STATUS_ATUAL = 'offline'; if (!_TIMESTAMP_OFFLINE) _TIMESTAMP_OFFLINE = Date.now(); _atualizarStatusVisual();
+      }).getSenhaAtual();
+    }
+
+    window.addEventListener('online', function(){ _atualizarStatusVisual(); setTimeout(_processarFila, 800); setTimeout(_medirLatencia, 1200); });
+    window.addEventListener('offline', function(){ _STATUS_ATUAL = 'offline'; _TIMESTAMP_OFFLINE = Date.now(); _atualizarStatusVisual(); });
+
+    (function(){
+      var sessao = sessionStorage.getItem('displayExpressUser');
+      if(!sessao){ google.script.run.withSuccessHandler(function(url){window.top.location.href = url;}).getScriptUrl(); return; }
+      try { var user = JSON.parse(sessao); document.getElementById('userName').textContent = user.nome || user.usuario; } catch(e){}
+      google.script.run.withSuccessHandler(function(lista){ sessionStorage.setItem('displayExpressMotoboyCodes', JSON.stringify(lista || [])); }).getCodigosMotoboy();
+      _atualizarStatusVisual(); _atualizarFilaEntradasVisual(); setTimeout(_medirLatencia, 3000);
+    })();
+
+    function sair(){ sessionStorage.removeItem('displayExpressUser'); sessionStorage.removeItem('modoEntradaDisplayExpress'); google.script.run.withSuccessHandler(function(url){window.top.location.href = url;}).getScriptUrl(); }
+    function _isOfflineReal() { return _STATUS_ATUAL === 'offline' || !navigator.onLine; }
+    function _mostrarAvisoOffline(containerId) { var tab = document.getElementById('tab-' + containerId); if (!tab) return; var antigo = tab.querySelector('.aviso-offline-aba'); if (antigo) antigo.remove(); var aviso = document.createElement('div'); aviso.className = 'aviso-offline-aba'; aviso.innerHTML = '🔴 <strong>Sem conexão</strong> — esta aba vai carregar quando a internet voltar.'; tab.insertBefore(aviso, tab.firstChild); }
+    function _removerAvisoOffline() { document.querySelectorAll('.aviso-offline-aba').forEach(function(el){ el.remove(); }); }
+
+    function showTab(tabId, btn){
+      document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');}); document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+      document.getElementById('tab-'+tabId).classList.add('active'); if(btn) btn.classList.add('active');
+      if(tabId !== 'online') pararAutoRefreshOnline();
+      var offline = _isOfflineReal(); _removerAvisoOffline();
+      if (tabId === 'entrada') { if (!offline) setTimeout(carregarUltimasEntradas, 100); _atualizarFilaEntradasVisual(); return; }
+      if (tabId === 'fechamentocd') { if (!offline) { setTimeout(carregarFechamentoCD, 100); setTimeout(carregarRankingFechamento, 200); } else _mostrarAvisoOffline('fechamentocd'); return; }
+      if (offline) { _mostrarAvisoOffline(tabId); var inpFora = document.getElementById('foraRotaCodigo'); if (tabId === 'forarota' && inpFora) inpFora.focus(); return; }
+      if(tabId === 'painel'){setTimeout(carregarPainel, 100);setTimeout(carregarSenhaPainel, 200);setTimeout(carregarTimeline, 300);}
+      if(tabId === 'relatorio') setTimeout(carregarRelatorioDia, 100);
+      if(tabId === 'admin'){setTimeout(carregarFuncionarios, 100);setTimeout(carregarConfigMotoristas, 200);}
+      if(tabId === 'motoristas') setTimeout(carregarMotoristas, 100);
+      if(tabId === 'motoboycodes') setTimeout(carregarMotoboyCodes, 100);
+      if(tabId === 'avisos') setTimeout(carregarAvisos, 100);
+      if(tabId === 'megafone'){ setTimeout(carregarRecados, 100); setTimeout(carregarHistoricoMegafone, 200); }
+      if(tabId === 'qrcode') setTimeout(carregarQRCodesComandos, 100);
+      if(tabId === 'forarota'){ var inp = document.getElementById('foraRotaCodigo'); if (inp) inp.focus(); setTimeout(carregarMotoboyCodes, 100); setTimeout(carregarConferenciaForaRota, 200); }
+      if(tabId === 'online'){ setTimeout(carregarOnline, 100); iniciarAutoRefreshOnline(); }
+    }
+
+    function load(show){document.getElementById('loading').className = show ? 'loading show' : 'loading';}
+    function showAlert(id, msg, tipo){ var el = document.getElementById(id); if(!el) return; el.innerHTML = msg; el.className = 'alert alert-'+tipo+' show'; setTimeout(function(){el.classList.remove('show');}, 5000); }
+
+    function atualizarRelogio(){ var agora = new Date(); document.getElementById('clockTime').textContent = String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0'); document.getElementById('clockDate').textContent = String(agora.getDate()).padStart(2,'0')+'/'+String(agora.getMonth()+1).padStart(2,'0')+'/'+agora.getFullYear(); }
+    setInterval(atualizarRelogio, 1000); atualizarRelogio();
+
+    function atualizarModoIndicator(){
+      var ind = document.getElementById('modoIndicator'); var txt = document.getElementById('modoTexto'); var icon = document.getElementById('modoIcon'); var toggles = document.querySelectorAll('#modoEntradaToggle .toggle-option');
+      toggles.forEach(function(t){t.classList.remove('active');});
+      if(modoEntradaAtual === 'PACOTE'){ ind.className = 'modo-indicator modo-pacote'; txt.textContent = 'PACOTE'; icon.innerHTML = '&#128234;'; document.querySelector('#modoEntradaToggle [data-modo="PACOTE"]').classList.add('active');
+      } else if(modoEntradaAtual === 'MOTOBOY') { ind.className = 'modo-indicator modo-motoboy'; txt.textContent = 'MOTOBOY'; icon.innerHTML = '&#128757;'; document.querySelector('#modoEntradaToggle [data-modo="MOTOBOY"]').classList.add('active');
+      } else { ind.className = 'modo-indicator modo-saca'; txt.textContent = 'SACA'; icon.innerHTML = '&#128230;'; document.querySelector('#modoEntradaToggle [data-modo="SACA"]').classList.add('active'); }
+    }
+
+    // FUNÇÕES DE ENTRADA E VOZ
+    function registrarEntrada() {
+      var input = document.getElementById('entradaCodigo');
+      var codigo = input.value.trim();
+      if (!codigo) return;
+
+      if (_isOfflineReal()) {
+        _enfileirarAcao('gravarEntrada', { codigo: codigo, modoAtual: modoEntradaAtual, qtd: 1 });
+        showAlert('alertEntrada', '📥 Entrada na fila (offline). Sincronizando...', 'warning');
+        input.value = '';
+        return;
+      }
+
+      load(true);
+      google.script.run
+        .withSuccessHandler(function(res) {
+          load(false);
+          if (res.sucesso) {
+            showAlert('alertEntrada', res.mensagem + ' (Posição: ' + res.posicao + ')', 'success');
+            input.value = '';
+            if (!_MODO_SILENCIOSO) {
+              _enviarEventoVozMarcado('ENTRADA', 'Entrada confirmada na posição ' + res.posicao, 'painel_gestao');
+            }
+            carregarPainel();
+            carregarUltimasEntradas();
+          } else {
+            if (res.comando) {
+              modoEntradaAtual = res.comando;
+              sessionStorage.setItem('modoEntradaDisplayExpress', modoEntradaAtual);
+              atualizarModoIndicator();
+              showAlert('alertEntrada', res.mensagem, 'info');
+              input.value = '';
+            } else {
+              showAlert('alertEntrada', res.mensagem, 'error');
+            }
+          }
+        })
+        .withFailureHandler(function(err) {
+          load(false);
+          showAlert('alertEntrada', 'Erro de conexão. A entrada foi para a fila offline.', 'warning');
+          _enfileirarAcao('gravarEntrada', { codigo: codigo, modoAtual: modoEntradaAtual, qtd: 1 });
+          input.value = '';
+        })
+        .gravarEntrada({ codigo: codigo, modoAtual: modoEntradaAtual, qtd: 1 });
+    }
+
+    // MICROFONE (WEB SPEECH API)
+    var recognition = null;
+    var escutando = false;
+
+    function toggleVozEntrada() {
+      var btn = document.getElementById('btnVozEntrada');
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Seu navegador não suporta reconhecimento de voz. Use o Chrome ou Edge.');
+        return;
+      }
+
+      if (escutando) {
+        if (recognition) recognition.stop();
+        escutando = false;
+        btn.style.background = 'rgba(168,85,247,0.2)';
+        btn.style.color = '#c4b5fd';
+        btn.innerHTML = '&#127908; Falar';
+        return;
+      }
+
+      var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = function() {
+        escutando = true;
+        btn.style.background = '#ef4444';
+        btn.style.color = '#fff';
+        btn.innerHTML = '🔴 Ouvindo...';
+      };
+
+      recognition.onresult = function(event) {
+        var textoFalado = event.results[0][0].transcript;
+        var numeroExtraido = extrairNumeroDaFala(textoFalado);
+        
+        if (numeroExtraido) {
+          document.getElementById('entradaCodigo').value = numeroExtraido;
+          registrarEntrada();
+        } else {
+          showAlert('alertEntrada', 'Não entendi o número. Fale "Saca 38", por exemplo.', 'warning');
+        }
+      };
+
+      recognition.onerror = function(event) {
+        if (event.error === 'not-allowed') {
+          alert('Você precisa permitir o uso do microfone no navegador (clique no cadeado ao lado do link).');
+        }
+        toggleVozEntrada();
+      };
+
+      recognition.onend = function() {
+        escutando = false;
+        btn.style.background = 'rgba(168,85,247,0.2)';
+        btn.style.color = '#c4b5fd';
+        btn.innerHTML = '&#127908; Falar';
+      };
+
+      recognition.start();
+    }
+
+    function extrairNumeroDaFala(texto) {
+      texto = texto.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      var match = texto.match(/saca\s*(\d+)/i);
+      if (match && match[1]) return match[1];
+      match = texto.match(/(\d+)/);
+      return match ? match[1] : null;
+    }
+
+    // ==========================================
+    // QR CODE MERCADO LIVRE (INTEGRAÇÃO ML_IDS)
+    // ==========================================
+    function mostrarQRdoML() {
+      var saca = document.getElementById('modalSaidaCodigo').textContent.trim();
+      if (!saca || saca === '--') {
+        alert('Não foi possível identificar a saca.');
+        return;
+      }
+
+      var divQR = document.getElementById('modalQRCodeML');
+      var imgQR = document.getElementById('imgQRCodeML');
+      var txtQR = document.getElementById('txtQRCodeML');
+      
+      divQR.style.display = 'flex';
+      imgQR.src = ''; 
+      txtQR.style.display = 'block';
+      txtQR.textContent = 'Buscando ID real no banco de dados...';
+      txtQR.style.color = '#555';
+      txtQR.style.background = '#f0f0f0';
+
+      google.script.run.withSuccessHandler(function(res) {
+        if (res.sucesso && res.containerId) {
+          var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&ecc=H&data=' + encodeURIComponent(res.containerId);
+          imgQR.src = qrUrl;
+          txtQR.textContent = 'ID: ' + res.containerId;
+        } else {
+          imgQR.src = '';
+          txtQR.textContent = '❌ ' + (res.mensagem || 'ID não encontrado. Rode o Bookmarklet no Mercado Livre.');
+          txtQR.style.color = '#ef4444';
+          txtQR.style.background = '#fee2e2';
+        }
+      }).withFailureHandler(function(err) {
+        imgQR.src = '';
+        txtQR.textContent = '❌ Erro de conexão: ' + err.message;
+        txtQR.style.color = '#ef4444';
+        txtQR.style.background = '#fee2e2';
+      }).getMLId(saca);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+    
+    function pararAutoRefreshOnline() { }
+    function iniciarAutoRefreshOnline() { }
+    function carregarUltimasEntradas() { }
+    function carregarPainel() { }
+    function carregarSenhaPainel() { }
+    function carregarTimeline() { }
+    function carregarRelatorioDia() { }
+    function carregarFuncionarios() { }
+    function carregarConfigMotoristas() { }
+    function carregarMotoristas() { }
+    function carregarMotoboyCodes() { }
+    function carregarAvisos() { }
+    function carregarRecados() { }
+    function carregarHistoricoMegafone() { }
+    function carregarQRCodesComandos() { }
+    function carregarConferenciaForaRota() { }
+    function carregarOnline() { }
+    function carregarFechamentoCD() { }
+    function carregarRankingFechamento() { }
+    function cadastrarCodigoMotoboy() { }
+    function buscarSacaNoPainel() { }
+    function limparBuscaPainel() { }
+    function confirmarSaidaModal() { }
+    function preencherQR(t) { document.getElementById('qrTexto').value = t; }
+    function enviarChatGestao() { }
+    function removerAnexoChatGestao() { }
+    function processarForaRota() { }
+    function falarTextoLivre() { }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      atualizarModoIndicator();
+      document.getElementById('btnRegistrarEntrada').addEventListener('click', registrarEntrada);
+      document.getElementById('btnLimparEntrada').addEventListener('click', function() { document.getElementById('entradaCodigo').value = ''; });
+      
+      document.querySelectorAll('#modoEntradaToggle .toggle-option').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          modoEntradaAtual = this.getAttribute('data-modo');
+          sessionStorage.setItem('modoEntradaDisplayExpress', modoEntradaAtual);
+          atualizarModoIndicator();
+        });
+      });
+
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          showTab(this.getAttribute('data-tab'), this);
+        });
+      });
+
+      document.getElementById('btnSair').addEventListener('click', sair);
+      
+      setInterval(_verificarVozRemota, 3000);
+      setInterval(_processarFila, 10000);
+    });
+  </script>
+</body>
+</html>

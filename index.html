@@ -991,28 +991,30 @@
         return new Proxy({}, { get: function(target, functionName) {
           return function(...args) {
             const payload = { acao: functionName, parametros: args.length === 1 ? args[0] : args };
-            const iframeId = 'gas_frame_' + Date.now();
-            const iframe = document.createElement('iframe'); iframe.style.display = 'none'; iframe.name = iframeId; iframe.id = iframeId; document.body.appendChild(iframe);
-            const form = document.createElement('form'); form.method = 'POST'; form.action = GAS_URL; form.target = iframeId; form.style.display = 'none';
-            const input = document.createElement('input'); input.type = 'hidden'; input.name = 'payload'; input.value = JSON.stringify(payload); form.appendChild(input); document.body.appendChild(form); form.submit();
+            const callbackName = 'jsonp_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
             
-            const messageListener = function(event) {
-              // Correção: Não checa event.source para permitir o redirecionamento do Google
-              window.removeEventListener('message', messageListener); 
-              if(document.body.contains(iframe)) document.body.removeChild(iframe); 
-              if(document.body.contains(form)) document.body.removeChild(form);
-              
-              try { 
-                const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data; 
-                if (successFn) successFn(data); 
-              } catch (e) { 
-                if (failFn) failFn(new Error('Resposta inválida do servidor')); 
-              }
+            // Cria a função de callback
+            window[callbackName] = function(data) {
+              if (successFn) successFn(data);
+              document.body.removeChild(script);
+              delete window[callbackName];
             };
-            window.addEventListener('message', messageListener);
+
+            // Cria a tag <script> apontando para o backend
+            const script = document.createElement('script');
+            script.src = GAS_URL + '?action=jsonp&callback=' + callbackName + '&payload=' + encodeURIComponent(JSON.stringify(payload));
+            
+            script.onerror = function() {
+              if (failFn) failFn(new Error('Erro de rede. Verifique sua conexão.'));
+              document.body.removeChild(script);
+              delete window[callbackName];
+            };
+            
+            document.body.appendChild(script);
           };
         }});
       };
+
       window.google = { script: { run: new Proxy({}, { get: function(target, prop) {
         if (prop === 'withSuccessHandler') { return function(successFn) { return new Proxy({}, { get: function(t, nextProp) { if (nextProp === 'withFailureHandler') { return function(failFn) { return createFetch(successFn, failFn); }; } return createFetch(successFn, null)[nextProp]; } }); }; }
         if (prop === 'withFailureHandler') { return function(failFn) { return createFetch(null, failFn); }; }
